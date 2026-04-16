@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kimkim-email-worker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-04-16",
+  "workers_dev": true,
+  "vars": {
+    "WEBHOOK_URL": "https://api.kimkim.store/api/incoming/cloudflare",
+    "WEBHOOK_TOKEN": "kimkim-super-secret-2026"
+  }
+}
