@@ -334,10 +334,10 @@ function App() {
       <div style={{ maxWidth: "1360px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <h1 style={{ fontSize: "46px", marginBottom: "10px", fontWeight: 800 }}>
-            KimKim Temp Email
+            KimKim Email
           </h1>
           <p style={{ color: "#9fb3c9", fontSize: "20px", margin: 0 }}>
-            Temporary inbox + OTP viewer + Telegram-ready workflow
+            Temporary inbox + OTP viewer 
           </p>
         </div>
 
