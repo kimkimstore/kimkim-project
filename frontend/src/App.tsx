@@ -42,12 +42,11 @@ function App() {
 
   const shareLink = useMemo(() => {
     if (!inboxId || typeof window === "undefined") return "";
-    return `${window.location.origin}${window.location.pathname}#${inboxId}`;
+    return `${window.location.origin}/#${inboxId}`;
   }, [inboxId]);
 
   async function safeJson<T>(res: Response): Promise<T> {
     const text = await res.text();
-
     try {
       return JSON.parse(text) as T;
     } catch {
@@ -154,12 +153,7 @@ function App() {
     const nextMessages = data.messages || [];
 
     setEmail(data.email || `${data.inboxId}@kimkim.store`);
-    setMessages((prev) => {
-      if (JSON.stringify(prev) === JSON.stringify(nextMessages)) {
-        return prev;
-      }
-      return nextMessages;
-    });
+    setMessages(nextMessages);
 
     const latestMessage = nextMessages[0];
     const latestOtpMessage = nextMessages.find((message) => message.otp);
@@ -175,7 +169,6 @@ function App() {
       setSelectedMessageId(latestOtpMessage.id);
     } else if (nextMessages.length > 0) {
       const stillExists = nextMessages.some((message) => message.id === selectedMessageId);
-
       if (!stillExists) {
         setSelectedMessageId(nextMessages[0].id);
       }
@@ -287,59 +280,28 @@ function App() {
   }
 
   async function handleCopyEmail() {
-    if (!email) {
-      setStatus("Tiada email untuk dicopy");
-      return;
-    }
-
-    try {
-      markInteraction();
-      await navigator.clipboard.writeText(email);
-      setStatus("✅ Email copied!");
-      setTimeout(() => setStatus(""), 2000);
-    } catch (error) {
-      console.error(error);
-      setStatus("Gagal copy email");
-    }
+    if (!email) return;
+    await navigator.clipboard.writeText(email);
+    setStatus("✅ Email copied!");
+    setTimeout(() => setStatus(""), 1500);
   }
 
   async function handleCopyShareLink() {
-    if (!shareLink) {
-      setStatus("Tiada inbox untuk dikongsi");
-      return;
-    }
-
-    try {
-      markInteraction();
-      await navigator.clipboard.writeText(shareLink);
-      setStatus("✅ Link copied!");
-      setTimeout(() => setStatus(""), 2000);
-    } catch (error) {
-      console.error(error);
-      setStatus("Gagal copy link");
-    }
+    if (!shareLink) return;
+    await navigator.clipboard.writeText(shareLink);
+    setStatus("✅ Link copied!");
+    setTimeout(() => setStatus(""), 1500);
   }
 
   async function handleCopyOtp() {
-    if (!selectedMessage?.otp) {
-      setStatus("Tiada OTP untuk dicopy");
-      return;
-    }
-
-    try {
-      markInteraction();
-      await navigator.clipboard.writeText(selectedMessage.otp);
-      setStatus("✅ OTP copied!");
-      setTimeout(() => setStatus(""), 2000);
-    } catch (error) {
-      console.error(error);
-      setStatus("Gagal copy OTP");
-    }
+    if (!selectedMessage?.otp) return;
+    await navigator.clipboard.writeText(selectedMessage.otp);
+    setStatus("✅ OTP copied!");
+    setTimeout(() => setStatus(""), 1500);
   }
 
   useEffect(() => {
     const idFromHash = window.location.hash.replace("#", "").trim().toLowerCase();
-
     if (!idFromHash) return;
 
     setInboxId(idFromHash);

@@ -1,5 +1,14 @@
 app.post("/api/incoming/cloudflare", async (req, res) => {
   try {
+    const incomingToken = req.headers["x-webhook-token"];
+
+    if (!incomingToken || incomingToken !== process.env.WEBHOOK_TOKEN) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized webhook",
+      });
+    }
+
     console.log("📩 Incoming email:", req.body);
 
     const {
@@ -13,14 +22,14 @@ app.post("/api/incoming/cloudflare", async (req, res) => {
     } = req.body;
 
     if (!inboxId) {
-      return res.status(400).json({ error: "Missing inboxId" });
+      return res.status(400).json({ success: false, error: "Missing inboxId" });
     }
 
     const safeInboxId = String(inboxId).trim().toLowerCase();
-    const safeFrom = from || "unknown@example.com";
-    const safeTo = to || `${safeInboxId}@kimkim.store`;
-    const safeSubject = subject || "(no subject)";
-    const safeBody = body || "";
+    const safeFrom = String(from || "unknown@example.com").trim().toLowerCase();
+    const safeTo = String(to || `${safeInboxId}@kimkim.store`).trim().toLowerCase();
+    const safeSubject = String(subject || "(no subject)").trim();
+    const safeBody = String(body || "").trim();
     const safeHeaders = headers ? JSON.stringify(headers) : null;
     const safeOtp = extractOtp(safeBody);
     const now = new Date().toISOString();
@@ -64,9 +73,7 @@ app.post("/api/incoming/cloudflare", async (req, res) => {
 
     await trimInboxMessages(safeInboxId);
 
-    // ==========================
-    // TELEGRAM AUTO NOTIFY
-    // ==========================
+    // TELEGRAM AUTO PUSH
     if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
       try {
         const messageText = [
@@ -78,20 +85,29 @@ app.post("/api/incoming/cloudflare", async (req, res) => {
           `🔐 OTP: ${safeOtp || "tiada"}`,
         ].join("\n");
 
-        await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            chat_id: process.env.TELEGRAM_CHAT_ID,
-            text: messageText,
-          }),
-        });
+        const telegramRes = await fetch(
+          `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chat_id: process.env.TELEGRAM_CHAT_ID,
+              text: messageText,
+            }),
+          }
+        );
 
-        console.log("✅ Telegram sent");
-      } catch (err) {
-        console.error("❌ Telegram error:", err.message);
+        const telegramText = await telegramRes.text();
+
+        if (!telegramRes.ok) {
+          console.error("❌ Telegram API error:", telegramRes.status, telegramText);
+        } else {
+          console.log("✅ Telegram sent:", telegramText);
+        }
+      } catch (telegramError) {
+        console.error("❌ Telegram error:", telegramError.message);
       }
     } else {
       console.log("ℹ️ Telegram env belum lengkap, skip Telegram notify");
